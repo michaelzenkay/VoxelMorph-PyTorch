@@ -116,7 +116,7 @@ class VoxelMorph():
         MMI = R.MetricEvaluate(I, J)
         return MMI
 
-    def mmi_smoth(self, y, ytrue, n=9, lamda=0.01):
+    def mmi_smooth(self, y, ytrue, n=9, lamda=0.01):
         mmi = self.mmi(y,ytrue)
         sm = self.smoothing(y)
         loss = -1.0 * mmi + lamda * sm
