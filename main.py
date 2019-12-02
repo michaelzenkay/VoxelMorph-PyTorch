@@ -1,24 +1,14 @@
 import network
 import torch
-# import torchvision
-import torch.nn as nn
-import torch.nn.functional as F
+import SimpleITK as sitk
 import torch.optim as optim
 from torch.utils import data
-from torch.autograd import Variable
 import numpy as np
-import matplotlib.pyplot as plt
 import skimage.io as io
 import os
 from skimage.transform import resize
-import multiprocessing as mp
-from tqdm import tqdm
-import gc
 import time
 from sklearn.model_selection import train_test_split
-from matplotlib.lines import Line2D
-use_gpu = torch.cuda.is_available()
-
 
 class VoxelMorph():
     """
@@ -116,7 +106,21 @@ class VoxelMorph():
         # print("Dice score", dice)
         return dice
 
-    # def mmi(self,I,J):
+    def mmi(self,I,J):
+        I = sitk.Cast(sitk.GetImageFromArray(I), sitk.sitkFloat32)
+        J = sitk.Cast(sitk.GetImageFromArray(J), sitk.sitkFloat32)
+
+        # Hijack Simple ITK Registration method for Mattes MutualInformation metric
+        R = sitk.ImageRegistrationMethod()
+        R.SetMetricAsMattesMutualInformation()
+        MMI = R.MetricEvaluate(I, J)
+        return MMI
+
+    def mmi_smoth(self, y, ytrue, n=9, lamda=0.01):
+        mmi = self.mmi(y,ytrue)
+        sm = self.smoothing(y)
+        loss = -1.0 * mmi + lamda * sm
+        return loss
 
 ######## TRAIN MODEL
     def train_model(self, batch_moving, batch_fixed, n=9, lamda=0.01, calc_dice=False):
