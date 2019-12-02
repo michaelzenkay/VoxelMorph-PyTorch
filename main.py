@@ -116,6 +116,8 @@ class VoxelMorph():
         # print("Dice score", dice)
         return dice
 
+    # def mmi(self,I,J):
+
 ######## TRAIN MODEL
     def train_model(self, batch_moving, batch_fixed, n=9, lamda=0.01, calc_dice=False):
         # Reset Gradients
@@ -180,10 +182,8 @@ class Dataset(data.Dataset):
         ID = self.list_IDs[index]
 
         # Load data and get label
-        fixed_image = torch.Tensor(
-            resize(io.imread('./fire-fundus-image-registration-dataset/' + ID + '_1.jpg'), (256, 256, 3)))
-        moving_image = torch.Tensor(
-            resize(io.imread('./fire-fundus-image-registration-dataset/' + ID + '_2.jpg'), (256, 256, 3)))
+        fixed_image = torch.Tensor(resize(io.imread('./fire-fundus-image-registration-dataset/' + ID + '_1.jpg'), (256, 256, 3)))
+        moving_image = torch.Tensor(resize(io.imread('./fire-fundus-image-registration-dataset/' + ID + '_2.jpg'), (256, 256, 3)))
         return fixed_image, moving_image
 
 
@@ -218,21 +218,24 @@ def main():
     for epoch in range(max_epochs):
         start_time = time.time()
         train_loss = 0
-        train_dice_score = 0
         val_loss = 0
-        val_dice_score = 0
+
+        # Training
         for batch_fixed, batch_moving in training_generator:
             loss = vm.train_model(batch_moving, batch_fixed)
             train_loss += loss.data
-        print('[', "{0:.2f}".format((time.time() - start_time) / 60), 'mins]', 'After', epoch + 1, 'epochs, the Average training loss is ', train_loss *
-              params['batch_size'] / len(training_set))
-        # Testing time
+        elapsed = "{0:.2f}".format((time.time() - start_time) / 60)
+        avg_loss = train_loss * params['batch_size'] / len(training_set)
+        print('[', elapsed, 'mins]', epoch + 1, 'epochs, train loss = ', avg_loss)
+
+        # Validation
         start_time = time.time()
         for batch_fixed, batch_moving in validation_generator:
             loss = vm.get_test_loss(batch_moving, batch_fixed)
             val_loss += loss.data
-        print('[', "{0:.2f}".format((time.time() - start_time) / 60), 'mins]', 'After', epoch + 1, 'epochs, the Average validations loss is ', val_loss *
-              params['batch_size'] / len(validation_set))
+        elapsed = "{0:.2f}".format((time.time() - start_time) / 60)
+        avg_loss = val_loss * params['batch_size'] / len(validation_set)
+        print('[', elapsed, 'mins]', epoch + 1, 'epochs, val loss = ', avg_loss)
 
 
 if __name__ == "__main__":
